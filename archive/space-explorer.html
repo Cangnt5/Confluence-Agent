@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confluence Agent - Khám phá cấu trúc trang</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-header {
+            background-color: #0052cc;
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            padding: 15px 20px;
+            font-weight: 600;
+        }
+        .card-body {
+            padding: 20px;
+        }
+        .summary-box {
+            background-color: #f0f7ff;
+            border-left: 4px solid #0052cc;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 5px 5px 0;
+        }
+        .keywords-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .keyword-tag {
+            background-color: #e9f2ff;
+            border: 1px solid #0052cc;
+            color: #0052cc;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        .page-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .page-info img {
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+        }
+        .page-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+        .page-meta {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 15px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0052cc;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .method-badge {
+            font-size: 0.8rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-left: 10px;
+        }
+        .method-rule {
+            background-color: #e9f2ff;
+            color: #0747a6;
+        }
+        .method-ai {
+            background-color: #deebff;
+            color: #0052cc;
+        }
+        .btn-primary {
+            background-color: #0052cc;
+            border-color: #0052cc;
+        }
+        .btn-primary:hover {
+            background-color: #0747a6;
+            border-color: #0747a6;
+        }
+        .form-control:focus {
+            border-color: #0052cc;
+            box-shadow: 0 0 0 0.25rem rgba(0, 82, 204, 0.25);
+        }
+        .error-message {
+            color: #dc3545;
+            margin-top: 10px;
+            display: none;
+        }
+        .space-structure {
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .folder-item {
+            cursor: pointer;
+            padding: 5px 0;
+        }
+        .folder-item:hover {
+            background-color: #f8f9fa;
+        }
+        .folder-icon {
+            margin-right: 5px;
+            color: #0052cc;
+        }
+        .page-icon {
+            margin-right: 5px;
+            color: #6c757d;
+        }
+        .folder-children {
+            margin-left: 20px;
+            display: none;
+        }
+        .folder-open .folder-children {
+            display: block;
+        }
+        .folder-toggle {
+            cursor: pointer;
+            width: 20px;
+            display: inline-block;
+            text-align: center;
+        }
+        .selected-page {
+            background-color: #e9f2ff;
+            border-radius: 5px;
+        }
+        .breadcrumb-item a {
+            color: #0052cc;
+            text-decoration: none;
+        }
+        .breadcrumb-item a:hover {
+            text-decoration: underline;
+        }
+        .space-info {
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .space-info h5 {
+            margin-bottom: 5px;
+        }
+        .space-info p {
+            margin-bottom: 0;
+            color: #6c757d;
+        }
+        .root-page-title {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            background-color: #f0f7ff;
+            border-left: 3px solid #0052cc;
+            border-radius: 5px;
+        }
+        .root-page-title h5 {
+            margin-bottom: 0;
+            color: #0052cc;
+        }
+        .no-children {
+            color: #6c757d;
+            font-style: italic;
+            padding: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 rounded">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">Confluence Agent</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/"><i class="fas fa-home"></i> Trang chính</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="/space-explorer.html"><i class="fas fa-sitemap"></i> Khám phá không gian</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/summary-viewer.html"><i class="fas fa-file-alt"></i> Xem tóm tắt</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/batch-analyzer.html"><i class="fas fa-layer-group"></i> Phân tích hàng loạt</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/telegram-bot.html"><i class="fab fa-telegram"></i> Telegram Bot</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>Confluence Agent - Khám phá cấu trúc trang</span>
+                    </div>
+                    <div class="card-body">
+                        <form id="urlForm">
+                            <div class="mb-3">
+                                <label for="pageInput" class="form-label"><strong>URL hoặc ID trang Confluence</strong> (Dán URL vào đây)</label>
+                                <input type="text" class="form-control form-control-lg border border-primary" id="pageInput" placeholder="Dán URL Confluence vào đây..." required>
+                                <div class="form-text">Ví dụ: https://giaohangnhanh.atlassian.net/wiki/spaces/UXD/pages/220430468/Weekly+Meeting</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="maxLength" class="form-label">Độ dài tối đa tóm tắt (ký tự)</label>
+                                <input type="number" class="form-control" id="maxLength" value="500" min="100" max="1000">
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="useAi">
+                                <label class="form-check-label" for="useAi">Sử dụng AI (yêu cầu OpenAI API key)</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg">Khám phá cấu trúc trang</button>
+                            <div class="error-message" id="errorMessage"></div>
+                        </form>
+
+                        <div class="alert alert-info mt-3" role="alert">
+                            <i class="fas fa-info-circle"></i> Đang tạo tóm tắt nội dung trang...
+                        </div>
+
+                        <div class="loading" id="loading">
+                            <div class="loading-spinner"></div>
+                            <p>Đang tải dữ liệu...</p>
+                        </div>
+
+                        <div id="spaceContainer" style="display: none; margin-top: 30px;">
+                            <div class="space-info" id="spaceInfo">
+                                <!-- Thông tin không gian sẽ được hiển thị ở đây -->
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5>Cấu trúc trang và các trang con</h5>
+                                    <div class="space-structure" id="spaceStructure">
+                                        <!-- Cấu trúc không gian sẽ được hiển thị ở đây -->
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <div id="pageContent">
+                                        <h5>Chọn một trang để xem tóm tắt nội dung</h5>
+                                        <p class="text-muted">Chọn một trang từ cấu trúc trang bên trái để xem tóm tắt nội dung.</p>
+                                    </div>
+                                    
+                                    <div id="resultContainer" style="display: none;">
+                                        <h5>Tóm tắt nội dung trang</h5>
+                                        <div class="page-info">
+                                            <img src="https://cdn-icons-png.flaticon.com/512/2965/2965300.png" alt="Confluence page">
+                                            <div>
+                                                <div class="page-title" id="pageTitle"></div>
+                                                <div class="page-meta">ID: <span id="pageIdDisplay"></span></div>
+                                            </div>
+                                        </div>
+
+                                        <div class="summary-box">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h6 class="mb-0">Tóm tắt</h6>
+                                                <span id="methodBadge" class="method-badge"></span>
+                                            </div>
+                                            <p id="summaryText"></p>
+                                        </div>
+
+                                        <div id="keywordsSection" style="display: none;">
+                                            <h6>Từ khóa chính</h6>
+                                            <div class="keywords-container" id="keywordsContainer"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('urlForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const pageInput = document.getElementById('pageInput').value.trim();
+            const maxLength = document.getElementById('maxLength').value;
+            const useAi = document.getElementById('useAi').checked;
+            
+            // Hiển thị loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('spaceContainer').style.display = 'none';
+            document.getElementById('resultContainer').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            try {
+                // Lấy thông tin không gian từ URL hoặc ID trang
+                const pageInfoResponse = await fetch('http://localhost:3000/api/confluence/page-info', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        pageIdOrUrl: pageInput
+                    })
+                });
+                
+                const pageInfo = await pageInfoResponse.json();
+                
+                if (pageInfo.error) {
+                    throw new Error(pageInfo.error);
+                }
+                
+                // Hiển thị thông tin không gian
+                const spaceInfo = document.getElementById('spaceInfo');
+                spaceInfo.innerHTML = `
+                    <h5>${pageInfo.spaceName} (${pageInfo.spaceKey})</h5>
+                    <p>Trang hiện tại: ${pageInfo.pageTitle}</p>
+                `;
+                
+                // Lấy cấu trúc trang và các trang con từ Confluence API
+                const structureResponse = await fetch('http://localhost:3000/api/confluence/page-structure', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        pageIdOrUrl: pageInput
+                    })
+                });
+                
+                const apiData = await structureResponse.json();
+                
+                if (apiData.error) {
+                    throw new Error(apiData.error);
+                }
+                
+                // Log cấu trúc dữ liệu để debug
+                console.log('API data:', apiData);
+                
+                // Sử dụng dữ liệu trực tiếp từ API
+                const structureData = {
+                    pageId: apiData.pageId,
+                    title: apiData.title,
+                    spaceKey: apiData.spaceKey,
+                    spaceName: apiData.spaceName,
+                    children: apiData.children || []
+                };
+                
+                // Log dữ liệu để debug
+                console.log('Structure data:', structureData);
+                
+                // Log cấu trúc dữ liệu đã xử lý
+                console.log('Processed structure data:', structureData);
+                
+                // Hiển thị cấu trúc trang và các trang con
+                renderPageStructure(structureData);
+                
+                // Tạo tóm tắt cho trang hiện tại
+                await createSummary(pageInfo.pageId, maxLength, useAi);
+                
+                // Hiển thị kết quả
+                document.getElementById('spaceContainer').style.display = 'block';
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('errorMessage').textContent = `Lỗi: ${error.message}`;
+                document.getElementById('errorMessage').style.display = 'block';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+        
+        // Hàm hiển thị cấu trúc trang và các trang con
+        function renderPageStructure(structureData) {
+            const spaceStructure = document.getElementById('spaceStructure');
+            spaceStructure.innerHTML = '';
+            
+            // Tạo danh sách các trang
+            const rootList = document.createElement('div');
+            rootList.className = 'root-pages';
+            
+            // Tạo tiêu đề trang gốc
+            const rootTitle = document.createElement('div');
+            rootTitle.className = 'root-page-title';
+            rootTitle.innerHTML = `<h5><i class="fas fa-file-alt"></i> ${structureData.title}</h5>`;
+            rootList.appendChild(rootTitle);
+            
+            // Tạo cấu trúc cây
+            const treeContainer = document.createElement('div');
+            treeContainer.className = 'tree-container';
+            
+            // Tạo danh sách các trang con
+            const childrenList = document.createElement('ul');
+            childrenList.className = 'page-children';
+            
+            // Thêm các trang con vào danh sách
+            if (structureData.children && structureData.children.length > 0) {
+                structureData.children.forEach(child => {
+                    const childElement = createPageElement(child, structureData.pageId);
+                    childrenList.appendChild(childElement);
+                });
+            } else {
+                childrenList.innerHTML = '<li class="no-children">Không có trang con nào trong trang này</li>';
+            }
+            
+            treeContainer.appendChild(childrenList);
+            rootList.appendChild(treeContainer);
+            spaceStructure.appendChild(rootList);
+            
+            // Bỏ qua việc mở rộng thư mục chứa trang hiện tại
+            // expandToCurrentPage(structureData.pageId);
+            
+            // Mở rộng tất cả các thư mục năm
+            const yearFolders = document.querySelectorAll('.folder-item[data-folder-type="folder"]');
+            yearFolders.forEach(folder => {
+                folder.classList.add('folder-open');
+                const toggleButton = folder.querySelector('.folder-toggle');
+                if (toggleButton) {
+                    const icon = toggleButton.querySelector('i');
+                    icon.className = 'fas fa-caret-down';
+                    
+                    const folderIcon = folder.querySelector('.folder-icon i');
+                    if (folderIcon) {
+                        folderIcon.className = 'fas fa-folder-open';
+                    }
+                }
+            });
+        }
+        
+        // Hàm giải mã HTML entities thành ký tự Unicode
+        function decodeHTMLEntities(text) {
+            if (!text) return '';
+            
+            const textArea = document.createElement('textarea');
+            textArea.innerHTML = text;
+            return textArea.value;
+        }
+        
+        // Hàm tạo phần tử trang
+        function createPageElement(page, currentPageId) {
+            const pageElement = document.createElement('div');
+            pageElement.className = 'folder-item';
+            pageElement.setAttribute('data-page-id', page.id);
+            
+            // Thêm thuộc tính data-folder-type cho các thư mục
+            const isFolder = page.type === 'folder' || (page.children && page.children.length > 0);
+            if (isFolder) {
+                pageElement.setAttribute('data-folder-type', page.type || 'folder');
+            }
+            
+            if (page.id === currentPageId) {
+                pageElement.classList.add('selected-page');
+            }
+            
+            let html = '';
+            const isAttachment = page.type === 'attachment';
+            
+            // Nếu là thư mục hoặc có trang con, hiển thị nút mở rộng
+            if (isFolder) {
+                html += `<span class="folder-toggle"><i class="fas fa-caret-right"></i></span>`;
+                html += `<span class="folder-icon"><i class="fas fa-folder"></i></span>`;
+            } else if (isAttachment) {
+                html += `<span class="folder-toggle" style="visibility: hidden;"><i class="fas fa-caret-right"></i></span>`;
+                html += `<span class="page-icon"><i class="fas fa-paperclip"></i></span>`;
+            } else {
+                html += `<span class="folder-toggle" style="visibility: hidden;"><i class="fas fa-caret-right"></i></span>`;
+                html += `<span class="page-icon"><i class="fas fa-file-alt"></i></span>`;
+            }
+            
+            html += `<span class="folder-name">${page.title}</span>`;
+            
+            pageElement.innerHTML = html;
+            
+            // Thêm sự kiện click để chọn trang
+            pageElement.addEventListener('click', async function(e) {
+                // Ngăn chặn sự kiện lan truyền đến phần tử cha
+                e.stopPropagation();
+                
+                // Bỏ chọn tất cả các trang
+                const allPages = document.querySelectorAll('.folder-item');
+                allPages.forEach(p => p.classList.remove('selected-page'));
+                
+                // Chọn trang hiện tại
+                pageElement.classList.add('selected-page');
+                
+                // Chỉ tạo tóm tắt nếu là trang, không phải thư mục
+                if (!isFolder) {
+                    const pageId = pageElement.getAttribute('data-page-id');
+                    const maxLength = document.getElementById('maxLength').value;
+                    const useAi = document.getElementById('useAi').checked;
+                    
+                    await createSummary(pageId, maxLength, useAi);
+                }
+            });
+            
+            // Thêm sự kiện click cho nút mở rộng
+            const toggleButton = pageElement.querySelector('.folder-toggle');
+            if (toggleButton && isFolder) {
+                toggleButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    
+                    // Mở rộng hoặc thu gọn thư mục
+                    pageElement.classList.toggle('folder-open');
+                    
+                    // Thay đổi biểu tượng
+                    const icon = toggleButton.querySelector('i');
+                    if (pageElement.classList.contains('folder-open')) {
+                        icon.className = 'fas fa-caret-down';
+                        
+                        // Thay đổi biểu tượng thư mục
+                        const folderIcon = pageElement.querySelector('.folder-icon i');
+                        if (folderIcon) {
+                            folderIcon.className = 'fas fa-folder-open';
+                        }
+                    } else {
+                        icon.className = 'fas fa-caret-right';
+                        
+                        // Thay đổi biểu tượng thư mục
+                        const folderIcon = pageElement.querySelector('.folder-icon i');
+                        if (folderIcon) {
+                            folderIcon.className = 'fas fa-folder';
+                        }
+                    }
+                });
+            }
+            
+            // Nếu có trang con, tạo phần tử chứa trang con
+            if (page.children && page.children.length > 0) {
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = 'folder-children';
+                
+                // Tạo phần tử cho từng trang con
+                page.children.forEach(childPage => {
+                    const childElement = createPageElement(childPage, currentPageId);
+                    childrenContainer.appendChild(childElement);
+                });
+                
+                pageElement.appendChild(childrenContainer);
+            }
+            
+            return pageElement;
+        }
+        
+        // Hàm mở rộng thư mục chứa trang hiện tại
+        function expandToCurrentPage(currentPageId) {
+            const currentPage = document.querySelector(`.folder-item[data-page-id="${currentPageId}"]`);
+            if (currentPage) {
+                // Mở rộng tất cả các thư mục cha
+                let parent = currentPage.parentElement;
+                while (parent && parent.classList.contains('folder-children')) {
+                    const parentFolder = parent.parentElement;
+                    if (parentFolder && parentFolder.classList.contains('folder-item')) {
+                        // Mở rộng thư mục cha
+                        parentFolder.classList.add('folder-open');
+                        
+                        // Thay đổi biểu tượng
+                        const toggleButton = parentFolder.querySelector('.folder-toggle');
+                        if (toggleButton) {
+                            const icon = toggleButton.querySelector('i');
+                            icon.className = 'fas fa-caret-down';
+                            
+                            // Thay đổi biểu tượng thư mục
+                            const folderIcon = parentFolder.querySelector('.folder-icon i');
+                            if (folderIcon) {
+                                folderIcon.className = 'fas fa-folder-open';
+                            }
+                        }
+                    }
+                    
+                    parent = parentFolder.parentElement;
+                }
+                
+                // Cuộn đến trang hiện tại
+                currentPage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+        
+        // Hàm tạo tóm tắt cho trang
+        async function createSummary(pageId, maxLength, useAi) {
+            try {
+                // Hiển thị loading
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('resultContainer').style.display = 'none';
+                
+                // Gọi API tóm tắt
+                const summaryResponse = await fetch('http://localhost:3000/api/analysis/summary', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        pageId,
+                        maxLength,
+                        useAi
+                    })
+                });
+                
+                const summaryData = await summaryResponse.json();
+                
+                if (summaryData.error) {
+                    throw new Error(summaryData.error);
+                }
+                
+                // Hiển thị kết quả tóm tắt
+                document.getElementById('pageTitle').textContent = summaryData.pageTitle;
+                document.getElementById('pageIdDisplay').textContent = summaryData.pageId;
+                // Sử dụng innerHTML thay vì textContent để giải mã HTML entities
+                const decodedSummary = decodeHTMLEntities(summaryData.summary);
+                document.getElementById('summaryText').innerHTML = decodedSummary;
+                document.getElementById('methodBadge').textContent = summaryData.method === 'ai' ? 'AI' : 'Rule-based';
+                document.getElementById('methodBadge').className = summaryData.method === 'ai' ? 'method-badge method-ai' : 'method-badge method-rule';
+                
+                // Thử lấy từ khóa
+                try {
+                    const keywordsResponse = await fetch('http://localhost:3000/api/analysis/keywords', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            pageId,
+                            numKeywords: 10
+                        })
+                    });
+                    
+                    const keywordsData = await keywordsResponse.json();
+                    
+                    if (!keywordsData.error && keywordsData.keywords && keywordsData.keywords.length > 0) {
+                        const keywordsContainer = document.getElementById('keywordsContainer');
+                        keywordsContainer.innerHTML = '';
+                        
+                        keywordsData.keywords.forEach(keyword => {
+                            const keywordTag = document.createElement('span');
+                            keywordTag.className = 'keyword-tag';
+                            // Sử dụng decodeHTMLEntities để giải mã HTML entities trong từ khóa
+                            keywordTag.textContent = decodeHTMLEntities(keyword.term);
+                            keywordsContainer.appendChild(keywordTag);
+                        });
+                        
+                        document.getElementById('keywordsSection').style.display = 'block';
+                    } else {
+                        document.getElementById('keywordsSection').style.display = 'none';
+                    }
+                } catch (keywordError) {
+                    console.error('Error fetching keywords:', keywordError);
+                    document.getElementById('keywordsSection').style.display = 'none';
+                }
+                
+                // Hiển thị kết quả
+                document.getElementById('resultContainer').style.display = 'block';
+            } catch (error) {
+                console.error('Error creating summary:', error);
+                alert(`Lỗi khi tạo tóm tắt: ${error.message}`);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+    </script>
+    <!-- Footer -->
+    <footer class="container mt-5 mb-3 text-center text-muted">
+        <div class="row">
+            <div class="col-12">
+                <hr>
+                <p>Confluence Agent © 2025</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="/" class="text-decoration-none text-muted">Trang chính</a>
+                    <a href="/space-explorer.html" class="text-decoration-none text-muted">Khám phá không gian</a>
+                    <a href="/summary-viewer.html" class="text-decoration-none text-muted">Xem tóm tắt</a>
+                    <a href="/batch-analyzer.html" class="text-decoration-none text-muted">Phân tích hàng loạt</a>
+                    <a href="/telegram-bot.html" class="text-decoration-none text-muted">Telegram Bot</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

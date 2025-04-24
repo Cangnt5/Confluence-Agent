@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confluence Agent - Trang chính</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-header {
+            background-color: #0052cc;
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            padding: 15px 20px;
+            font-weight: 600;
+        }
+        .card-body {
+            padding: 20px;
+        }
+        .summary-box {
+            background-color: #f0f7ff;
+            border-left: 4px solid #0052cc;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 5px 5px 0;
+        }
+        .keywords-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .keyword-tag {
+            background-color: #e9f2ff;
+            border: 1px solid #0052cc;
+            color: #0052cc;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        .page-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .page-info img {
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+        }
+        .page-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+        .page-meta {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 15px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0052cc;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .method-badge {
+            font-size: 0.8rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-left: 10px;
+        }
+        .method-rule {
+            background-color: #e9f2ff;
+            color: #0747a6;
+        }
+        .method-ai {
+            background-color: #deebff;
+            color: #0052cc;
+        }
+        .btn-primary {
+            background-color: #0052cc;
+            border-color: #0052cc;
+        }
+        .btn-primary:hover {
+            background-color: #0747a6;
+            border-color: #0747a6;
+        }
+        .form-control:focus {
+            border-color: #0052cc;
+            box-shadow: 0 0 0 0.25rem rgba(0, 82, 204, 0.25);
+        }
+        .error-message {
+            color: #dc3545;
+            margin-top: 10px;
+            display: none;
+        }
+        .result-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        .result-item:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .result-header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            border-radius: 8px 8px 0 0;
+        }
+        .result-body {
+            padding: 15px;
+        }
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .stat-item {
+            text-align: center;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            flex: 1;
+            margin: 0 5px;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #0052cc;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .error-list {
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 rounded">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">Confluence Agent</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="/"><i class="fas fa-home"></i> Trang chính</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/batch-analyzer.html" style="display: none;"><i class="fas fa-layer-group"></i> Phân tích hàng loạt</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/telegram-bot.html"><i class="fab fa-telegram"></i> Telegram Bot</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="alert alert-info mb-4" role="alert">
+                    <h4 class="alert-heading"><i class="fas fa-layer-group"></i> Phân tích hàng loạt trang Confluence</h4>
+                    <p>Công cụ này giúp bạn phân tích nhiều trang Confluence cùng lúc. Dán danh sách URL hoặc ID trang (mỗi URL một dòng) và nhấn "Phân tích" để bắt đầu.</p>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>Confluence Agent - Phân tích hàng loạt</span>
+                    </div>
+                    <div class="card-body">
+                        <form id="batchForm">
+                            <div class="mb-3">
+                                <label for="urlList" class="form-label"><strong>Danh sách URL hoặc ID trang Confluence</strong></label>
+                                <textarea class="form-control form-control-lg border border-primary" id="urlList" rows="5" placeholder="Dán danh sách URL hoặc ID trang Confluence vào đây (mỗi URL một dòng)..." required></textarea>
+                                <div class="form-text">Ví dụ: https://giaohangnhanh.atlassian.net/wiki/spaces/FMP/pages/423165995</div>
+                            </div>
+                            
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="useAi" checked>
+                                <label class="form-check-label" for="useAi">Sử dụng AI (yêu cầu OpenAI API key)</label>
+                            </div>
+                            
+                            <div id="aiPromptContainer" class="mb-3">
+                                <label for="customPrompt" class="form-label">Prompt AI</label>
+                                <textarea class="form-control" id="customPrompt" rows="3" placeholder="Nhập yêu cầu của bạn cho AI (ví dụ: Phân tích UX của trang này và đề xuất cải tiến)"></textarea>
+                                <div class="form-text">Nhập yêu cầu cụ thể cho AI để phân tích nội dung trang Confluence</div>
+                            </div>
+                            
+                            <div id="maxLengthContainer" class="mb-3" style="display: none;">
+                                <label for="maxLength" class="form-label">Độ dài tối đa (ký tự)</label>
+                                <input type="number" class="form-control" id="maxLength" value="500" min="100" max="1000">
+                                <div class="form-text">Chỉ áp dụng khi không sử dụng AI</div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-lg">Phân tích hàng loạt</button>
+                            <div class="error-message" id="errorMessage"></div>
+                        </form>
+
+                        <div class="progress-container" id="progressContainer">
+                            <h5>Tiến trình phân tích</h5>
+                            <div class="loading" id="loading">
+                                <div class="loading-spinner"></div>
+                                <p>Đang phân tích các trang...</p>
+                            </div>
+                            
+                            <div class="stats-container" id="statsContainer" style="display: none;">
+                                <div class="stat-item">
+                                    <div class="stat-value" id="totalPages">0</div>
+                                    <div class="stat-label">Tổng số trang</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" id="successPages">0</div>
+                                    <div class="stat-label">Thành công</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" id="errorPages">0</div>
+                                    <div class="stat-label">Lỗi</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="error-list" id="errorList">
+                            <h5>Các lỗi gặp phải</h5>
+                            <div class="list-group" id="errorItems">
+                                <!-- Danh sách lỗi sẽ được thêm vào đây -->
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-4" id="combinedAnalysisContainer" style="display: none;">
+                            <div class="card-header bg-primary text-white">
+                                <h5><i class="fas fa-brain"></i> Phân tích tổng hợp</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="summary-box" style="background-color: #f5f5ff; border-left-color: #0052cc;">
+                                    <h6>Kết quả phân tích dựa trên prompt</h6>
+                                    <div id="combinedAnalysisContent" style="white-space: pre-line;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-4" id="resultContainer" style="display: none;">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-file-alt"></i> Kết quả phân tích từng trang</h5>
+                                <button type="button" id="toggleResultsBtn" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> Hiển thị chi tiết
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="resultItems" style="display: none;"></div>
+                                <div id="resultSummary" class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i> Kết quả phân tích từng trang đã được ẩn. Nhấn nút "Hiển thị chi tiết" để xem.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <footer class="container mt-5 mb-3 text-center text-muted">
+            <div class="row">
+                <div class="col-12">
+                    <hr>
+                    <p>Confluence Agent 2025</p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="/" class="text-decoration-none text-muted">Trang chính</a>
+                        <a href="/batch-analyzer.html" class="text-decoration-none text-muted" style="display: none;">Phân tích hàng loạt</a>
+                        <a href="/telegram-bot.html" class="text-decoration-none text-muted">Telegram Bot</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hiển thị/ẩn các trường dựa trên việc sử dụng AI
+            document.getElementById('useAi').addEventListener('change', function() {
+                document.getElementById('aiPromptContainer').style.display = this.checked ? 'block' : 'none';
+                document.getElementById('maxLengthContainer').style.display = this.checked ? 'none' : 'block';
+            });
+            
+            // Xử lý form phân tích hàng loạt
+            document.getElementById('batchForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const urlList = document.getElementById('urlList').value.trim();
+                const useAi = document.getElementById('useAi').checked;
+                const customPrompt = document.getElementById('customPrompt').value.trim();
+                const maxLength = document.getElementById('maxLength').value;
+                
+                if (!urlList) {
+                    document.getElementById('errorMessage').textContent = 'Vui lòng nhập ít nhất một URL hoặc ID trang';
+                    document.getElementById('errorMessage').style.display = 'block';
+                    return;
+                }
+                
+                // Hiển thị loading và ẩn thông báo lỗi
+                document.getElementById('errorMessage').style.display = 'none';
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('progressContainer').style.display = 'block';
+                document.getElementById('statsContainer').style.display = 'none';
+                document.getElementById('errorList').style.display = 'none';
+                document.getElementById('combinedAnalysisContainer').style.display = 'none';
+                document.getElementById('resultContainer').style.display = 'none';
+                
+                try {
+                    // Gọi API phân tích hàng loạt
+                    const response = await fetch('/api/analysis/batch', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            urls: urlList,
+                            useAi,
+                            customPrompt: useAi ? customPrompt : '',
+                            maxLength: parseInt(maxLength)
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        // Hiển thị thống kê
+                        document.getElementById('totalPages').textContent = data.totalProcessed;
+                        document.getElementById('successPages').textContent = data.successCount;
+                        document.getElementById('errorPages').textContent = data.errorCount;
+                        document.getElementById('statsContainer').style.display = 'flex';
+                        
+                        // Hiển thị danh sách lỗi nếu có
+                        if (data.errors && data.errors.length > 0) {
+                            const errorItems = document.getElementById('errorItems');
+                            errorItems.innerHTML = '';
+                            
+                            data.errors.forEach(error => {
+                                const errorItem = document.createElement('div');
+                                errorItem.className = 'list-group-item list-group-item-danger';
+                                errorItem.innerHTML = `
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Lỗi: ${error.url}</h6>
+                                    </div>
+                                    <p class="mb-1">${error.error}</p>
+                                `;
+                                errorItems.appendChild(errorItem);
+                            });
+                            
+                            document.getElementById('errorList').style.display = 'block';
+                        }
+                        
+                        // Hiển thị kết quả phân tích tổng hợp nếu có
+                        if (data.combinedAnalysis) {
+                            document.getElementById('combinedAnalysisContent').innerHTML = data.combinedAnalysis;
+                            document.getElementById('combinedAnalysisContainer').style.display = 'block';
+                            // Ẩn kết quả phân tích từng trang khi có kết quả tổng hợp
+                            document.getElementById('resultContainer').style.display = 'none';
+                        } else {
+                            // Chỉ hiển thị kết quả phân tích từng trang khi không có kết quả tổng hợp
+                            document.getElementById('resultContainer').style.display = 'block';
+                        }
+                        
+                        // Chuẩn bị kết quả phân tích từng trang (dù có hiển thị hay không)
+                        if (data.results && data.results.length > 0) {
+                            const resultItems = document.getElementById('resultItems');
+                            resultItems.innerHTML = '';
+                            
+                            data.results.forEach(result => {
+                                const resultItem = document.createElement('div');
+                                resultItem.className = 'result-item';
+                                
+                                // Tạo danh sách từ khóa
+                                let keywordsHtml = '';
+                                if (result.keywords && result.keywords.length > 0) {
+                                    keywordsHtml = '<div class="keywords-container">';
+                                    result.keywords.forEach(keyword => {
+                                        keywordsHtml += `<span class="keyword-tag">${keyword.term}</span>`;
+                                    });
+                                    keywordsHtml += '</div>';
+                                }
+                                
+                                // Kiểm tra nếu summary là 'Sẽ được phân tích trong kết quả tổng hợp'
+                                const summaryHtml = result.summary === 'Sẽ được phân tích trong kết quả tổng hợp' ?
+                                    `<div class="alert alert-info">Nội dung trang này đã được phân tích trong kết quả tổng hợp phía trên.</div>` :
+                                    `<div class="summary-box">
+                                        <h6>Tóm tắt</h6>
+                                        <div>${result.summary}</div>
+                                     </div>`;
+                                
+                                resultItem.innerHTML = `
+                                    <div class="result-header">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h5 class="mb-0">${result.pageTitle}</h5>
+                                            <span class="method-badge ${result.method === 'ai' ? 'method-ai' : 'method-rule'}">${result.method === 'ai' ? 'AI' : 'Rule-based'}</span>
+                                        </div>
+                                        <div class="page-meta">
+                                            <small>ID: ${result.pageId} | <a href="${result.url}" target="_blank">Xem trang gốc</a></small>
+                                        </div>
+                                    </div>
+                                    <div class="result-body">
+                                        ${summaryHtml}
+                                        ${keywordsHtml}
+                                    </div>
+                                `;
+                                
+                                resultItems.appendChild(resultItem);
+                            });
+                        }
+                    } else {
+                        throw new Error(data.error || 'Đã xảy ra lỗi khi phân tích');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    document.getElementById('errorMessage').textContent = `Lỗi: ${error.message}`;
+                    document.getElementById('errorMessage').style.display = 'block';
+                } finally {
+                    document.getElementById('loading').style.display = 'none';
+                }
+            });
+            
+            // Xử lý sự kiện hiển thị/ẩn kết quả phân tích từng trang
+            document.getElementById('toggleResultsBtn').addEventListener('click', function() {
+                const resultItems = document.getElementById('resultItems');
+                const resultSummary = document.getElementById('resultSummary');
+                const toggleBtn = document.getElementById('toggleResultsBtn');
+                
+                if (resultItems.style.display === 'none') {
+                    resultItems.style.display = 'block';
+                    resultSummary.style.display = 'none';
+                    toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i> Ẩn chi tiết';
+                } else {
+                    resultItems.style.display = 'none';
+                    resultSummary.style.display = 'block';
+                    toggleBtn.innerHTML = '<i class="fas fa-eye"></i> Hiển thị chi tiết';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "name": "confluence-agent",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Agent kết nối với Confluence API",
+  "dependencies": {
+    "atlassian-jwt": "^2.0.3",
+    "axios": "^1.8.4",
+    "cheerio": "^1.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "natural": "^8.0.1",
+    "node-telegram-bot-api": "^0.66.0",
+    "openai": "^4.96.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

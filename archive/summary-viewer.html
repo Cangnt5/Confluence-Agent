@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confluence Agent - Phân tích nội dung với AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-header {
+            background-color: #0052cc;
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            padding: 15px 20px;
+            font-weight: 600;
+        }
+        .card-body {
+            padding: 20px;
+        }
+        .summary-box {
+            background-color: #f0f7ff;
+            border-left: 4px solid #0052cc;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 5px 5px 0;
+        }
+        .keywords-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .keyword-tag {
+            background-color: #e9f2ff;
+            border: 1px solid #0052cc;
+            color: #0052cc;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        .page-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .page-info img {
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+        }
+        .page-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+        .page-meta {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 15px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0052cc;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .method-badge {
+            font-size: 0.8rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-left: 10px;
+        }
+        .method-rule {
+            background-color: #e9f2ff;
+            color: #0747a6;
+        }
+        .method-ai {
+            background-color: #deebff;
+            color: #0052cc;
+        }
+        .btn-primary {
+            background-color: #0052cc;
+            border-color: #0052cc;
+        }
+        .btn-primary:hover {
+            background-color: #0747a6;
+            border-color: #0747a6;
+        }
+        .form-control:focus {
+            border-color: #0052cc;
+            box-shadow: 0 0 0 0.25rem rgba(0, 82, 204, 0.25);
+        }
+        .error-message {
+            color: #dc3545;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 rounded">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">Confluence Agent</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/"><i class="fas fa-home"></i> Trang chính</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/space-explorer.html"><i class="fas fa-sitemap"></i> Khám phá không gian</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="/summary-viewer.html"><i class="fas fa-file-alt"></i> Xem tóm tắt</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/batch-analyzer.html"><i class="fas fa-layer-group"></i> Phân tích hàng loạt</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/telegram-bot.html"><i class="fab fa-telegram"></i> Telegram Bot</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="alert alert-info mb-4" role="alert">
+                    <h4 class="alert-heading"><i class="fas fa-info-circle"></i> Phân tích nội dung Confluence với AI</h4>
+                    <p>Công cụ này giúp bạn phân tích nội dung của bất kỳ trang Confluence nào bằng AI. Chỉ cần dán URL hoặc nhập ID trang và nhập prompt cho AI để bắt đầu.</p>
+                </div>
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>Confluence Agent - Trình phân tích nội dung với AI</span>
+                    </div>
+                    <div class="card-body">
+                        <form id="summaryForm">
+                            <div class="mb-3">
+                                <label for="pageInput" class="form-label"><strong>URL hoặc ID trang Confluence</strong> (Dán URL vào đây)</label>
+                                <input type="text" class="form-control form-control-lg border border-primary" id="pageInput" placeholder="Dán URL Confluence vào đây..." required>
+                                <div class="form-text">Ví dụ: https://giaohangnhanh.atlassian.net/wiki/spaces/FMP/pages/423165995 hoặc chỉ nhập 423165995</div>
+                            </div>
+                            
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="includeSubpages" checked>
+                                <label class="form-check-label" for="includeSubpages">Hiển thị cả các trang con (subpages)</label>
+                            </div>
+                            <div class="mb-3" id="maxLengthContainer">
+                                <label for="maxLength" class="form-label">Độ dài tối đa (ký tự)</label>
+                                <input type="number" class="form-control" id="maxLength" value="500" min="100" max="1000">
+                                <div class="form-text">Chỉ áp dụng khi không sử dụng AI</div>
+                            </div>
+                            <div class="mb-3 form-check" style="display: none;">
+                                <input type="checkbox" class="form-check-input" id="useAi" checked>
+                                <label class="form-check-label" for="useAi">Sử dụng AI (yêu cầu OpenAI API key)</label>
+                            </div>
+                            
+                            <div id="aiPromptContainer" class="mb-3">
+                                <label for="customPrompt" class="form-label">Prompt AI</label>
+                                <textarea class="form-control" id="customPrompt" rows="3" placeholder="Nhập yêu cầu của bạn cho AI (ví dụ: Phân tích UX của trang này và đề xuất cải tiến)"></textarea>
+                                <div class="form-text">Nhập yêu cầu cụ thể cho AI để phân tích nội dung trang Confluence</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg">Phân tích nội dung</button>
+                            <div class="error-message" id="errorMessage"></div>
+                        </form>
+
+                            <div class="loading" id="loading">
+                                <div class="loading-spinner"></div>
+                                <p>Đang phân tích nội dung...</p>
+                            </div>
+                        
+                        <div id="subpagesContainer" style="display: none; margin-top: 30px;">
+                            <h5>Danh sách các trang</h5>
+                            <p>Chọn một trang để phân tích:</p>
+                            
+                            <div class="list-group mb-3" id="pagesList">
+                                <!-- Danh sách trang sẽ được thêm vào đây -->
+                            </div>
+                            
+                            <button type="button" class="btn btn-primary" id="summarizeSelectedBtn" disabled>Phân tích trang đã chọn</button>
+                        </div>
+
+                        <div id="resultContainer" style="display: none; margin-top: 30px;">
+                            <h5>Kết quả phân tích</h5>
+                            <div class="page-info">
+                                <img src="https://cdn-icons-png.flaticon.com/512/2965/2965300.png" alt="Confluence page">
+                                <div>
+                                    <div class="page-title" id="pageTitle"></div>
+                                    <div class="page-meta">ID: <span id="pageIdDisplay"></span></div>
+                                </div>
+                            </div>
+
+                            <div class="summary-box">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0">Phân tích</h6>
+                                    <span id="methodBadge" class="method-badge">AI</span>
+                                </div>
+                                <div id="summaryText"></div>
+                                
+                                <div id="followupPromptContainer" class="mt-4" style="display: none;">
+                                    <hr>
+                                    <h6>Tiếp tục prompt</h6>
+                                    <div class="mb-3">
+                                        <textarea class="form-control" id="followupPrompt" rows="2" placeholder="Nhập prompt tiếp theo dựa trên kết quả trên (ví dụ: Hãy đề xuất các cải tiến cụ thể)"></textarea>
+                                    </div>
+                                    <button type="button" class="btn btn-primary" id="followupBtn">Gửi prompt tiếp theo</button>
+                                </div>
+                            </div>
+
+                            <div id="keywordsSection" style="display: none;">
+                                <h6>Từ khóa chính</h6>
+                                <div class="keywords-container" id="keywordsContainer"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Hàm giải mã HTML entities thành ký tự Unicode
+        function decodeHTMLEntities(text) {
+            if (!text) return '';
+            
+            const textArea = document.createElement('textarea');
+            textArea.innerHTML = text;
+            return textArea.value;
+        }
+        
+        // Hiển thị trường prompt AI và ẩn trường độ dài tối đa
+        document.getElementById('aiPromptContainer').style.display = 'block';
+        document.getElementById('maxLengthContainer').style.display = 'none';
+        
+        // Hàm trích xuất pageId từ URL hoặc sử dụng trực tiếp nếu là ID
+        function extractPageId(url) {
+            console.log('Extracting page ID from URL in frontend:', url);
+            
+            let pageId = url;
+            
+            // Kiểm tra các mẫu URL Confluence phổ biến
+            const patterns = [
+                /\/pages\/([0-9]+)/, // Định dạng chuẩn: /spaces/SPACE/pages/123456
+                /pageId=([0-9]+)/, // Định dạng query param: ?pageId=123456
+                /\/([0-9]+)\.html/, // Định dạng cũ: /123456.html
+                /\/pages\/([0-9]+)\//, // Định dạng với tiền tố và hậu tố: /pages/123456/App+driver
+                /\/([0-9]+)\//, // Định dạng số đơn giản với dấu gạch chéo: /123456/
+                /\/pages\/([0-9]+)$/, // Định dạng kết thúc bằng ID: /pages/123456
+                /\/([0-9]+)$/, // Định dạng kết thúc bằng số: /123456
+                /\/pages\/([0-9]+)\?/, // Định dạng với query string: /pages/123456?...
+                /\/pages\/([0-9]+)\//i, // Định dạng với bất kỳ ký tự nào sau ID
+                /\/([0-9]+)\?/ // Định dạng số đơn giản với query string: /123456?...
+            ];
+            
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match && match[1]) {
+                    console.log('Found page ID in frontend:', match[1], 'using pattern:', pattern);
+                    return match[1];
+                }
+            }
+            
+            // Nếu không tìm thấy theo mẫu, thử phương pháp cũ
+            if (url.includes('/')) {
+                const urlParts = url.split('/');
+                pageId = urlParts[urlParts.length - 1];
+                // Kiểm tra nếu có tham số query
+                if (pageId.includes('?')) {
+                    pageId = pageId.split('?')[0];
+                }
+            }
+            
+            console.log('Fallback page ID in frontend:', pageId);
+            return pageId;
+        }
+        
+        // Xử lý sự kiện khi nhấn nút gửi prompt tiếp theo
+        document.getElementById('followupBtn').addEventListener('click', async function() {
+            const followupPrompt = document.getElementById('followupPrompt').value.trim();
+            
+            if (!followupPrompt) {
+                document.getElementById('errorMessage').textContent = 'Vui lòng nhập prompt tiếp theo';
+                document.getElementById('errorMessage').style.display = 'block';
+                return;
+            }
+            
+            // Lấy thông tin trang hiện tại từ sessionStorage
+            const pageId = sessionStorage.getItem('currentPageId');
+            const pageTitle = sessionStorage.getItem('currentPageTitle');
+            const lastResult = sessionStorage.getItem('lastAnalysisResult');
+            
+            if (!pageId) {
+                document.getElementById('errorMessage').textContent = 'Không tìm thấy thông tin trang. Vui lòng phân tích lại trang.';
+                document.getElementById('errorMessage').style.display = 'block';
+                return;
+            }
+            
+            // Hiển thị loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            try {
+                // Tạo prompt mới dựa trên kết quả trước đó
+                const combinedPrompt = `Dựa trên kết quả phân tích trước đó: "${lastResult}", ${followupPrompt}`;
+                
+                // Gọi API phân tích nội dung
+                const response = await fetch('/api/analysis/summary', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        pageId: pageId,
+                        maxLength: 3000,
+                        useAi: true,
+                        customPrompt: combinedPrompt,
+                        includeSubpages: false
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Không thể lấy dữ liệu từ API');
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Cập nhật kết quả mới
+                document.getElementById('summaryText').innerHTML = decodeHTMLEntities(data.summary);
+                
+                // Lưu kết quả mới
+                sessionStorage.setItem('lastAnalysisResult', data.summary);
+                
+                // Xóa nội dung prompt tiếp theo
+                document.getElementById('followupPrompt').value = '';
+                
+                // Cuộn đến kết quả
+                document.getElementById('summaryText').scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                console.error('Lỗi:', error);
+                document.getElementById('errorMessage').textContent = `Lỗi khi phân tích nội dung: ${error.message}`;
+                document.getElementById('errorMessage').style.display = 'block';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+        
+        document.getElementById('summaryForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const pageUrl = document.getElementById('pageInput').value.trim();
+            const includeSubpages = document.getElementById('includeSubpages').checked;
+            const customPrompt = document.getElementById('customPrompt').value.trim();
+            
+            if (!pageUrl) {
+                document.getElementById('errorMessage').textContent = 'Vui lòng nhập URL hoặc ID trang Confluence';
+                document.getElementById('errorMessage').style.display = 'block';
+                return;
+            }
+            
+            if (!customPrompt) {
+                document.getElementById('errorMessage').textContent = 'Vui lòng nhập prompt cho AI';
+                document.getElementById('errorMessage').style.display = 'block';
+                return;
+            }
+            
+            // Ẩn container kết quả và hiển thị loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultContainer').style.display = 'none';
+            document.getElementById('subpagesContainer').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            try {
+                // Gọi API phân tích nội dung
+                const summaryResponse = await fetch('/api/analysis/summary', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        pageId: extractPageId(pageUrl),
+                        maxLength: 3000, // Giá trị lớn để không giới hạn độ dài
+                        useAi: true, // Luôn sử dụng AI
+                        customPrompt: customPrompt
+                    })
+                });
+                
+                const summaryData = await summaryResponse.json();
+                
+                if (summaryData.error) {
+                    throw new Error(summaryData.error);
+                }
+                
+                // Hiển thị kết quả tóm tắt
+                document.getElementById('pageTitle').textContent = decodeHTMLEntities(summaryData.pageTitle);
+                document.getElementById('pageIdDisplay').textContent = summaryData.pageId;
+                // Sử dụng innerHTML và decodeHTMLEntities để hiển thị đúng tiếng Việt
+                document.getElementById('summaryText').innerHTML = decodeHTMLEntities(summaryData.summary);
+                document.getElementById('methodBadge').textContent = summaryData.method === 'ai' ? 'AI' : 'Rule-based';
+                document.getElementById('methodBadge').className = summaryData.method === 'ai' ? 'method-badge method-ai' : 'method-badge method-rule';
+                
+                // Hiển thị phần prompt tiếp theo nếu sử dụng AI
+                if (summaryData.method === 'ai') {
+                    document.getElementById('followupPromptContainer').style.display = 'block';
+                    
+                    // Lưu trữ pageId và nội dung trang để sử dụng cho prompt tiếp theo
+                    const extractedPageId = extractPageId(pageUrl);
+                    sessionStorage.setItem('currentPageId', extractedPageId);
+                    sessionStorage.setItem('currentPageTitle', summaryData.pageTitle);
+                    sessionStorage.setItem('lastAnalysisResult', summaryData.summary);
+                } else {
+                    document.getElementById('followupPromptContainer').style.display = 'none';
+                }
+                
+                // Thử lấy từ khóa
+                try {
+                    const extractedPageId = extractPageId(pageUrl);
+                    const keywordsResponse = await fetch('/api/analysis/keywords', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            pageId: extractedPageId,
+                            numKeywords: 10
+                        })
+                    });
+                    
+                    const keywordsData = await keywordsResponse.json();
+                    
+                    if (!keywordsData.error && keywordsData.keywords && keywordsData.keywords.length > 0) {
+                        const keywordsContainer = document.getElementById('keywordsContainer');
+                        keywordsContainer.innerHTML = '';
+                        
+                        keywordsData.keywords.forEach(keyword => {
+                            const keywordTag = document.createElement('span');
+                            keywordTag.className = 'keyword-tag';
+                            // Sử dụng decodeHTMLEntities để hiển thị đúng tiếng Việt
+                            keywordTag.textContent = decodeHTMLEntities(keyword.term);
+                            keywordsContainer.appendChild(keywordTag);
+                        });
+                        
+                        document.getElementById('keywordsSection').style.display = 'block';
+                    } else {
+                        document.getElementById('keywordsSection').style.display = 'none';
+                    }
+                } catch (keywordError) {
+                    console.error('Error fetching keywords:', keywordError);
+                    document.getElementById('keywordsSection').style.display = 'none';
+                }
+                
+                // Nếu có yêu cầu hiển thị các trang con
+                if (includeSubpages) {
+                    try {
+                        const extractedPageId = extractPageId(pageUrl);
+                        // Lấy danh sách các trang con
+                        const childPagesResponse = await fetch(`/api/confluence/page/${extractedPageId}/children`);
+                        const childPagesData = await childPagesResponse.json();
+                        
+                        if (childPagesData.length > 0) {
+                            // Thêm trang cha vào đầu danh sách
+                            const pagesList = document.getElementById('pagesList');
+                            pagesList.innerHTML = '';
+                            
+                            // Thêm trang cha
+                            const parentItem = document.createElement('a');
+                            parentItem.href = '#';
+                            parentItem.className = 'list-group-item list-group-item-action active';
+                            parentItem.setAttribute('data-page-id', pageId);
+                            parentItem.innerHTML = `
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">${summaryData.pageTitle}</h5>
+                                    <small><i class="fas fa-file"></i> Trang hiện tại</small>
+                                </div>
+                                <p class="mb-1">Trang hiện tại đang được phân tích</p>
+                            `;
+                            pagesList.appendChild(parentItem);
+                            
+                            // Thêm các trang con
+                            childPagesData.forEach(childPage => {
+                                const item = document.createElement('a');
+                                item.href = '#';
+                                item.className = 'list-group-item list-group-item-action';
+                                item.setAttribute('data-page-id', childPage.id);
+                                item.innerHTML = `
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">${childPage.title}</h5>
+                                        <small><i class="fas fa-file-alt"></i> Trang con</small>
+                                    </div>
+                                `;
+                                pagesList.appendChild(item);
+                            });
+                            
+                            // Thêm sự kiện click cho các mục trong danh sách
+                            const listItems = pagesList.querySelectorAll('.list-group-item');
+                            listItems.forEach(item => {
+                                item.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    
+                                    // Bỏ chọn tất cả các mục
+                                    listItems.forEach(i => i.classList.remove('active'));
+                                    
+                                    // Chọn mục hiện tại
+                                    this.classList.add('active');
+                                    
+                                    // Kích hoạt nút tóm tắt
+                                    document.getElementById('summarizeSelectedBtn').disabled = false;
+                                });
+                            });
+                            
+                            // Thêm sự kiện click cho nút tóm tắt
+                            document.getElementById('summarizeSelectedBtn').addEventListener('click', async function() {
+                                const selectedItem = document.querySelector('.list-group-item.active');
+                                if (selectedItem) {
+                                    const selectedPageId = selectedItem.getAttribute('data-page-id');
+                                    
+                                    // Hiển thị loading
+                                    document.getElementById('loading').style.display = 'block';
+                                    document.getElementById('resultContainer').style.display = 'none';
+                                    
+                                    try {
+                                        // Gọi API phân tích cho trang đã chọn
+                                        const selectedSummaryResponse = await fetch('/api/analysis/summary', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json'
+                                            },
+                                            body: JSON.stringify({
+                                                pageId: selectedPageId,
+                                                maxLength: 3000,
+                                                useAi: true,
+                                                customPrompt
+                                            })
+                                        });
+                                        
+                                        const selectedSummaryData = await selectedSummaryResponse.json();
+                                        
+                                        if (selectedSummaryData.error) {
+                                            throw new Error(selectedSummaryData.error);
+                                        }
+                                        
+                                        // Hiển thị kết quả tóm tắt
+                                        document.getElementById('pageTitle').textContent = selectedSummaryData.pageTitle;
+                                        document.getElementById('pageIdDisplay').textContent = selectedSummaryData.pageId;
+                                        document.getElementById('summaryText').textContent = selectedSummaryData.summary;
+                                        document.getElementById('methodBadge').textContent = selectedSummaryData.method === 'ai' ? 'AI' : 'Rule-based';
+                                        document.getElementById('methodBadge').className = selectedSummaryData.method === 'ai' ? 'method-badge method-ai' : 'method-badge method-rule';
+                                        
+                                        // Thử lấy từ khóa
+                                        try {
+                                            const keywordsResponse = await fetch('http://localhost:3000/api/analysis/keywords', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Content-Type': 'application/json'
+                                                },
+                                                body: JSON.stringify({
+                                                    pageId: selectedPageId,
+                                                    numKeywords: 10
+                                                })
+                                            });
+                                            
+                                            const keywordsData = await keywordsResponse.json();
+                                            
+                                            if (!keywordsData.error && keywordsData.keywords && keywordsData.keywords.length > 0) {
+                                                const keywordsContainer = document.getElementById('keywordsContainer');
+                                                keywordsContainer.innerHTML = '';
+                                                
+                                                keywordsData.keywords.forEach(keyword => {
+                                                    const keywordTag = document.createElement('span');
+                                                    keywordTag.className = 'keyword-tag';
+                                                    keywordTag.textContent = keyword.term;
+                                                    keywordsContainer.appendChild(keywordTag);
+                                                });
+                                                
+                                                document.getElementById('keywordsSection').style.display = 'block';
+                                            } else {
+                                                document.getElementById('keywordsSection').style.display = 'none';
+                                            }
+                                        } catch (keywordError) {
+                                            console.error('Error fetching keywords:', keywordError);
+                                            document.getElementById('keywordsSection').style.display = 'none';
+                                        }
+                                        
+                                        // Hiển thị kết quả
+                                        document.getElementById('resultContainer').style.display = 'block';
+                                    } catch (error) {
+                                        console.error('Error:', error);
+                                        document.getElementById('errorMessage').textContent = `Lỗi khi phân tích nội dung: ${error.message}`;
+                                        document.getElementById('errorMessage').style.display = 'block';
+                                    } finally {
+                                        document.getElementById('loading').style.display = 'none';
+                                    }
+                                }
+                            });
+                            
+                            // Hiển thị danh sách trang
+                            document.getElementById('subpagesContainer').style.display = 'block';
+                        } else {
+                            // Nếu không có trang con, hiển thị thông báo và kết quả tóm tắt trang hiện tại
+                            const pagesList = document.getElementById('pagesList');
+                            pagesList.innerHTML = '';
+                            
+                            // Thêm trang cha
+                            const parentItem = document.createElement('a');
+                            parentItem.href = '#';
+                            parentItem.className = 'list-group-item list-group-item-action active';
+                            parentItem.setAttribute('data-page-id', pageId);
+                            parentItem.innerHTML = `
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">${summaryData.pageTitle}</h5>
+                                    <small><i class="fas fa-file"></i> Trang hiện tại</small>
+                                </div>
+                                <p class="mb-1">Trang hiện tại đang được phân tích</p>
+                            `;
+                            pagesList.appendChild(parentItem);
+                            
+                            // Thêm thông báo không có trang con
+                            const noChildrenMessage = document.createElement('div');
+                            noChildrenMessage.className = 'alert alert-info mt-3';
+                            noChildrenMessage.innerHTML = `<i class="fas fa-info-circle"></i> Trang này không có trang con nào.`;
+                            document.getElementById('subpagesContainer').appendChild(noChildrenMessage);
+                            
+                            // Hiển thị danh sách trang và kết quả tóm tắt
+                            document.getElementById('subpagesContainer').style.display = 'block';
+                            document.getElementById('resultContainer').style.display = 'block';
+                            document.getElementById('summarizeSelectedBtn').style.display = 'none';
+                        }
+                    } catch (subpagesError) {
+                        console.error('Error fetching subpages:', subpagesError);
+                        // Nếu có lỗi khi lấy trang con, vẫn hiển thị kết quả tóm tắt trang hiện tại
+                        document.getElementById('resultContainer').style.display = 'block';
+                    }
+                } else {
+                    // Nếu không yêu cầu hiển thị trang con, hiển thị kết quả tóm tắt trang hiện tại
+                    document.getElementById('resultContainer').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('errorMessage').textContent = `Lỗi khi phân tích nội dung: ${error.message}`;
+                document.getElementById('errorMessage').style.display = 'block';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+    </script>
+    <!-- Footer -->
+    <footer class="container mt-5 mb-3 text-center text-muted">
+        <div class="row">
+            <div class="col-12">
+                <hr>
+                <p>Confluence Agent © 2025</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="/" class="text-decoration-none text-muted">Trang chính</a>
+                    <a href="/space-explorer.html" class="text-decoration-none text-muted">Khám phá không gian</a>
+                    <a href="/summary-viewer.html" class="text-decoration-none text-muted">Xem tóm tắt</a>
+                    <a href="/batch-analyzer.html" class="text-decoration-none text-muted">Phân tích hàng loạt</a>
+                    <a href="/telegram-bot.html" class="text-decoration-none text-muted">Telegram Bot</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

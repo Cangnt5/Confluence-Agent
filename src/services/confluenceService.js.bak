@@ -1,0 +1,420 @@
+const confluenceApi = require('../api/confluenceApi');
+
+/**
+ * Service để xử lý logic nghiệp vụ liên quan đến Confluence
+ */
+class ConfluenceService {
+  /**
+   * Tìm kiếm thông tin trong Confluence
+   * @param {string} query - Từ khóa tìm kiếm
+   * @param {number} limit - Số lượng kết quả tối đa
+   * @returns {Promise<Array>} - Kết quả tìm kiếm đã được xử lý
+   */
+  async searchContent(query, limit = 10) {
+    try {
+      const results = await confluenceApi.searchPages(query, limit);
+      
+      // Xử lý và định dạng kết quả
+      return results.map(page => ({
+        id: page.id,
+        title: page.title,
+        spaceKey: page.space?.key,
+        spaceName: page.space?.name,
+        url: `${page._links.base}${page._links.webui}`,
+        lastUpdated: page.version?.when,
+        updatedBy: page.version?.by?.displayName
+      }));
+    } catch (error) {
+      console.error('Error in searchContent service:', error);
+      throw new Error('Không thể tìm kiếm nội dung: ' + error.message);
+    }
+  }
+
+  /**
+   * Lấy thông tin chi tiết của một trang
+   * @param {string} pageId - ID của trang
+   * @returns {Promise<Object>} - Thông tin chi tiết của trang
+   */
+  async getPageDetails(pageId) {
+    try {
+      const page = await confluenceApi.getPageById(pageId);
+      
+      // Xử lý và định dạng kết quả
+      return {
+        id: page.id,
+        title: page.title,
+        content: page.body?.storage?.value,
+        spaceKey: page.space?.key,
+        spaceName: page.space?.name,
+        version: page.version?.number,
+        url: `${page._links.base}${page._links.webui}`,
+        lastUpdated: page.version?.when,
+        updatedBy: page.version?.by?.displayName
+      };
+    } catch (error) {
+      console.error('Error in getPageDetails service:', error);
+      throw new Error('Không thể lấy thông tin trang: ' + error.message);
+    }
+  }
+
+  /**
+   * Lấy cấu trúc phân cấp của một trang (trang con)
+   * @param {string} pageId - ID của trang cha
+   * @returns {Promise<Array>} - Danh sách các trang con
+   */
+  async getPageHierarchy(pageId) {
+    try {
+      const childPages = await confluenceApi.getChildPages(pageId);
+      
+      // Xử lý và định dạng kết quả
+      return childPages.map(page => ({
+        id: page.id,
+        title: page.title,
+        url: `${page._links.base}${page._links.webui}`
+      }));
+    } catch (error) {
+      console.error('Error in getPageHierarchy service:', error);
+      throw new Error('Không thể lấy cấu trúc trang: ' + error.message);
+    }
+  }
+
+  /**
+   * Tạo hoặc cập nhật trang Confluence
+   * @param {Object} pageData - Thông tin trang
+   * @returns {Promise<Object>} - Thông tin trang đã tạo/cập nhật
+   */
+  async createOrUpdatePage(pageData) {
+    try {
+      const { id, spaceKey, title, content, parentId } = pageData;
+      
+      // Nếu có ID, cập nhật trang hiện có
+      if (id) {
+        const existingPage = await confluenceApi.getPageById(id);
+        const updatedPage = await confluenceApi.updatePage(
+          id,
+          title,
+          content,
+          existingPage.version.number
+        );
+        return {
+          id: updatedPage.id,
+          title: updatedPage.title,
+          url: `${updatedPage._links.base}${updatedPage._links.webui}`,
+          status: 'updated'
+        };
+      } 
+      // Ngược lại, tạo trang mới
+      else {
+        const newPage = await confluenceApi.createPage(
+          spaceKey,
+          title,
+          content,
+          parentId
+        );
+        return {
+          id: newPage.id,
+          title: newPage.title,
+          url: `${newPage._links.base}${newPage._links.webui}`,
+          status: 'created'
+        };
+      }
+    } catch (error) {
+      console.error('Error in createOrUpdatePage service:', error);
+      throw new Error('Không thể tạo/cập nhật trang: ' + error.message);
+    }
+  }
+
+  /**
+   * Lấy danh sách các không gian làm việc
+   * @returns {Promise<Array>} - Danh sách không gian làm việc
+   */
+  async getWorkspaces() {
+    try {
+      const spaces = await confluenceApi.getSpaces();
+      
+      // Xử lý và định dạng kết quả
+      return spaces.map(space => ({
+        key: space.key,
+        name: space.name,
+        description: space.description?.plain?.value,
+        type: space.type
+      }));
+    } catch (error) {
+      console.error('Error in getWorkspaces service:', error);
+      throw new Error('Không thể lấy danh sách không gian làm việc: ' + error.message);
+    }
+  }
+  /**
+   * Lấy cấu trúc của một không gian Confluence
+   * @param {string} spaceKey - Key của không gian
+   * @returns {Promise<Object>} - Cấu trúc không gian đã được xử lý
+   */
+  async getSpaceStructure(spaceKey) {
+    try {
+      const spaceContent = await confluenceApi.getSpaceStructure(spaceKey);
+      
+      // Xử lý và tổ chức cấu trúc thành dạng cây
+      const pages = spaceContent.results || [];
+      
+      // Tạo một cấu trúc phân cấp
+      const rootPages = [];
+      const pageMap = {};
+      
+      // Đầu tiên, tạo map của tất cả các trang
+      pages.forEach(page => {
+        // Tạo đối tượng trang với các thuộc tính cơ bản
+        pageMap[page.id] = {
+          id: page.id,
+          title: page.title,
+          type: 'page',
+          url: page._links ? `${page._links.base}${page._links.webui}` : '',
+          children: [],
+          ancestors: page.ancestors || [],
+          hasChildren: page.children && page.children.page && page.children.page.results && page.children.page.results.length > 0
+        };
+        
+        // Kiểm tra xem trang có tập tin đính kèm không
+        if (page.children && page.children.attachment && page.children.attachment.results) {
+          // Thêm các tập tin đính kèm vào danh sách con
+          page.children.attachment.results.forEach(attachment => {
+            const attachmentInfo = {
+              id: attachment.id,
+              title: attachment.title,
+              type: 'attachment',
+              url: attachment._links ? `${attachment._links.base}${attachment._links.webui}` : '',
+              children: [],
+              parentId: page.id
+            };
+            pageMap[page.id].children.push(attachmentInfo);
+          });
+        }
+      });
+      
+      // Sau đó, xây dựng cấu trúc cây
+      pages.forEach(page => {
+        const pageInfo = pageMap[page.id];
+        
+        // Nếu không có tổ tiên, đây là trang gốc
+        if (!page.ancestors || page.ancestors.length === 0) {
+          rootPages.push(pageInfo);
+        } else {
+          // Lấy ID của tổ tiên trực tiếp (tổ tiên cuối cùng trong mảng)
+          const parentId = page.ancestors[page.ancestors.length - 1].id;
+          
+          // Thêm trang hiện tại vào danh sách con của tổ tiên
+          if (pageMap[parentId]) {
+            pageMap[parentId].children.push(pageInfo);
+          } else {
+            // Nếu không tìm thấy tổ tiên trong pageMap, có thể đây là một thư mục hoặc trang đặc biệt
+            rootPages.push(pageInfo);
+          }
+        }
+        
+        // Kiểm tra và thêm các trang con trực tiếp
+        if (page.children && page.children.page && page.children.page.results) {
+          page.children.page.results.forEach(childPage => {
+            // Chỉ xử lý nếu trang con chưa được xử lý trong danh sách chính
+            if (!pageMap[childPage.id]) {
+              const childInfo = {
+                id: childPage.id,
+                title: childPage.title,
+                type: 'page',
+                url: childPage._links ? `${childPage._links.base}${childPage._links.webui}` : '',
+                children: [],
+                parentId: page.id
+              };
+              pageMap[childPage.id] = childInfo;
+              pageMap[page.id].children.push(childInfo);
+            }
+          });
+        }
+      });
+      
+      // Sắp xếp các trang gốc và trang con theo tiêu đề
+      rootPages.sort((a, b) => a.title.localeCompare(b.title));
+      Object.values(pageMap).forEach(page => {
+        page.children.sort((a, b) => a.title.localeCompare(b.title));
+      });
+      
+      // Tạo các thư mục đặc biệt dựa trên tiêu đề trang (năm, tháng, v.v.)
+      this._createSpecialFolders(rootPages, pageMap);
+      
+      return {
+        spaceKey,
+        rootPages,
+        allPages: pageMap
+      };
+    } catch (error) {
+      console.error('Error in getSpaceStructure service:', error);
+      throw new Error('Không thể lấy cấu trúc không gian: ' + error.message);
+    }
+  }
+
+  /**
+   * Tìm kiếm trang trong một không gian cụ thể
+   * @param {string} spaceKey - Key của không gian
+   * @param {string} query - Từ khóa tìm kiếm
+   * @param {number} limit - Số lượng kết quả tối đa
+   * @returns {Promise<Array>} - Kết quả tìm kiếm đã được xử lý
+   */
+  async searchInSpace(spaceKey, query, limit = 20) {
+    try {
+      const results = await confluenceApi.searchPagesInSpace(spaceKey, query, limit);
+      
+      // Xử lý và định dạng kết quả
+      return results.map(page => ({
+        id: page.id,
+        title: page.title,
+        spaceKey: page.space?.key,
+        spaceName: page.space?.name,
+        url: `${page._links.base}${page._links.webui}`,
+        lastUpdated: page.version?.when,
+        updatedBy: page.version?.by?.displayName,
+        ancestors: page.ancestors || [],
+        hasAncestors: page.ancestors && page.ancestors.length > 0
+      }));
+    } catch (error) {
+      console.error('Error in searchInSpace service:', error);
+      throw new Error('Không thể tìm kiếm trong không gian: ' + error.message);
+    }
+  }
+
+  /**
+   * Lấy thông tin không gian dựa trên URL hoặc ID trang
+   * @param {string} pageIdOrUrl - ID trang hoặc URL Confluence
+   * @returns {Promise<Object>} - Thông tin không gian và trang
+   */
+  /**
+   * Tạo các thư mục đặc biệt dựa trên tiêu đề trang
+   * @param {Array} rootPages - Danh sách các trang gốc
+   * @param {Object} pageMap - Map của tất cả các trang
+   * @private
+   */
+  _createSpecialFolders(rootPages, pageMap) {
+    // Tìm các trang có tiêu đề chứa 'Weekly Meeting'
+    const weeklyMeetingPages = [];
+    const weeklyMeetingPattern = /Weekly\s*Meeting/i;
+    
+    // Tìm kiếm trang Weekly Meeting
+    let weeklyMeetingPage = null;
+    for (const page of rootPages) {
+      if (weeklyMeetingPattern.test(page.title)) {
+        weeklyMeetingPage = page;
+        break;
+      }
+    }
+    
+    // Nếu không tìm thấy trang Weekly Meeting, dừng lại
+    if (!weeklyMeetingPage) return;
+    
+    // Tìm các trang Sprint
+    const sprintPages = [];
+    const yearFolders = {};
+    const sprintPattern = /Sprint\s*(\d+)\s*-\s*(\d+)\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i;
+    
+    // Tìm tất cả các trang Sprint trong toàn bộ pageMap
+    Object.values(pageMap).forEach(page => {
+      const match = page.title.match(sprintPattern);
+      if (match) {
+        // Lấy năm từ tiêu đề hoặc từ thông tin trang
+        let year = null;
+        
+        // Thử tìm năm trong tiêu đề
+        const yearMatch = page.title.match(/(20\d\d)/); // Tìm năm dạng 20XX
+        if (yearMatch) {
+          year = yearMatch[1];
+        } else {
+          // Nếu không tìm thấy năm trong tiêu đề, dựa vào tháng để ước lượng năm
+          const month = match[3];
+          const day = parseInt(match[2]);
+          
+          // Xử lý đặc biệt cho các trang Sprint
+          // Giả sử Sprint hiện tại là năm 2025, các Sprint cũ hơn là năm 2024, 2023, v.v.
+          // Đây chỉ là ước lượng, cần cập nhật theo thời gian thực tế
+          const currentYear = new Date().getFullYear();
+          const sprintNumber = parseInt(match[1]);
+          
+          if (sprintNumber >= 30) {
+            year = '2025'; // Sprint mới hơn
+          } else if (sprintNumber >= 20) {
+            year = '2024'; // Sprint cũ hơn
+          } else {
+            year = '2023'; // Sprint rất cũ
+          }
+        }
+        
+        // Tạo thư mục năm nếu chưa có
+        if (!yearFolders[year]) {
+          yearFolders[year] = {
+            id: `folder_${year}`,
+            title: year,
+            type: 'folder',
+            children: [],
+            isSpecialFolder: true
+          };
+        }
+        
+        // Thêm trang Sprint vào thư mục năm tương ứng
+        yearFolders[year].children.push(page);
+        
+        // Đánh dấu trang này đã được thêm vào thư mục đặc biệt
+        page.inSpecialFolder = true;
+      }
+    });
+    
+    // Xóa các trang đã được thêm vào thư mục đặc biệt khỏi danh sách trang gốc
+    for (let i = rootPages.length - 1; i >= 0; i--) {
+      if (rootPages[i].inSpecialFolder) {
+        rootPages.splice(i, 1);
+      }
+    }
+    
+    // Xóa các trang đã được thêm vào thư mục đặc biệt khỏi danh sách con của các trang khác
+    Object.values(pageMap).forEach(page => {
+      if (page.children) {
+        for (let i = page.children.length - 1; i >= 0; i--) {
+          if (page.children[i].inSpecialFolder) {
+            page.children.splice(i, 1);
+          }
+        }
+      }
+    });
+    
+    // Sắp xếp các thư mục năm theo thứ tự giảm dần (năm mới nhất lên đầu)
+    const sortedYearFolders = Object.values(yearFolders).sort((a, b) => b.title.localeCompare(a.title));
+    
+    // Sắp xếp các trang Sprint trong mỗi thư mục năm theo thứ tự giảm dần (Sprint mới nhất lên đầu)
+    sortedYearFolders.forEach(yearFolder => {
+      yearFolder.children.sort((a, b) => {
+        const sprintA = a.title.match(/Sprint\s*(\d+)/i);
+        const sprintB = b.title.match(/Sprint\s*(\d+)/i);
+        
+        if (sprintA && sprintB) {
+          return parseInt(sprintB[1]) - parseInt(sprintA[1]);
+        }
+        const match = pageIdOrUrl.match(urlPattern);
+        if (match && match[1]) {
+          pageId = match[1];
+        } else {
+          throw new Error('Không thể trích xuất ID trang từ URL');
+        }
+      }
+      
+      // Lấy thông tin trang
+      const page = await this.getPageDetails(pageId);
+      
+      // Trả về thông tin không gian và trang
+      return {
+        pageId: page.id,
+        pageTitle: page.title,
+        spaceKey: page.spaceKey,
+        spaceName: page.spaceName
+      };
+    } catch (error) {
+      console.error('Error in getSpaceInfoFromPage service:', error);
+      throw new Error('Không thể lấy thông tin không gian từ trang: ' + error.message);
+    }
+  }
+}
+
+module.exports = new ConfluenceService();

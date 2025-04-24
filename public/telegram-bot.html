@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confluence Agent - Quản lý Telegram Bot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-header {
+            background-color: #0052cc;
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            padding: 15px 20px;
+            font-weight: 600;
+        }
+        .card-body {
+            padding: 20px;
+        }
+        .status-badge {
+            font-size: 0.9rem;
+            padding: 5px 10px;
+            border-radius: 20px;
+        }
+        .status-active {
+            background-color: #e3fcef;
+            color: #00875a;
+            border: 1px solid #00875a;
+        }
+        .status-inactive {
+            background-color: #ffebe6;
+            color: #de350b;
+            border: 1px solid #de350b;
+        }
+        .command-card {
+            background-color: #f0f7ff;
+            border-left: 4px solid #0052cc;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 0 5px 5px 0;
+        }
+        .command-name {
+            font-weight: 600;
+            font-family: monospace;
+            background-color: #e9f2ff;
+            padding: 3px 6px;
+            border-radius: 4px;
+        }
+        .token-input {
+            font-family: monospace;
+            letter-spacing: 0.5px;
+        }
+        .setup-step {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            border-left: 3px solid #0052cc;
+        }
+        .step-number {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background-color: #0052cc;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 rounded">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">Confluence Agent</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/"><i class="fas fa-home"></i> Trang chính</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="/telegram-bot.html"><i class="fab fa-telegram"></i> Telegram Bot</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="alert alert-info mb-4" role="alert">
+                    <h4 class="alert-heading"><i class="fab fa-telegram"></i> Quản lý Telegram Bot</h4>
+                    <p>Kết nối Confluence Agent với Telegram để truy cập nhanh chóng từ điện thoại di động hoặc máy tính của bạn.</p>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>Trạng thái Telegram Bot</span>
+                        <span id="botStatus" class="status-badge status-inactive">Chưa kết nối</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="botInfo">
+                            <div class="mb-4">
+                                <h5>Cài đặt Token</h5>
+                                <form id="tokenForm">
+                                    <div class="mb-3">
+                                        <label for="botToken" class="form-label">Telegram Bot Token</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control token-input" id="botToken" placeholder="Nhập token từ BotFather..." required>
+                                            <button class="btn btn-primary" type="submit">Cập nhật Token</button>
+                                        </div>
+                                        <div class="form-text">Token có dạng: 123456789:ABCDefGhIJKlmNoPQRsTUVwxyZ</div>
+                                    </div>
+                                </form>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h5>Hướng dẫn tạo Telegram Bot</h5>
+                                <div class="setup-step">
+                                    <span class="step-number">1</span>
+                                    <span>Mở ứng dụng Telegram và tìm kiếm <strong>@BotFather</strong></span>
+                                </div>
+                                <div class="setup-step">
+                                    <span class="step-number">2</span>
+                                    <span>Gửi lệnh <code>/newbot</code> và làm theo hướng dẫn để tạo bot mới</span>
+                                </div>
+                                <div class="setup-step">
+                                    <span class="step-number">3</span>
+                                    <span>Đặt tên cho bot (ví dụ: Confluence Agent Bot)</span>
+                                </div>
+                                <div class="setup-step">
+                                    <span class="step-number">4</span>
+                                    <span>Đặt username cho bot (phải kết thúc bằng 'bot', ví dụ: confluence_agent_bot)</span>
+                                </div>
+                                <div class="setup-step">
+                                    <span class="step-number">5</span>
+                                    <span>Sao chép token API được cung cấp và dán vào ô trên</span>
+                                </div>
+                                <div class="setup-step">
+                                    <span class="step-number">6</span>
+                                    <span>Nhấn "Cập nhật Token" và khởi động lại server</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h5>Các lệnh có sẵn</h5>
+                                <div class="command-card">
+                                    <div class="command-name">/start</div>
+                                    <p class="mb-0">Bắt đầu tương tác với bot và hiển thị lời chào</p>
+                                </div>
+                                <div class="command-card">
+                                    <div class="command-name">/help</div>
+                                    <p class="mb-0">Hiển thị trợ giúp và danh sách các lệnh có sẵn</p>
+                                </div>
+                                <div class="command-card">
+                                    <div class="command-name">/analyze &lt;URL hoặc ID trang&gt;</div>
+                                    <p class="mb-0">Phân tích nội dung của một trang Confluence</p>
+                                </div>
+                                <div class="command-card">
+                                    <div class="command-name">/prompt &lt;prompt&gt;</div>
+                                    <p class="mb-0">Đặt prompt tùy chỉnh cho AI khi phân tích trang</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h5>Cách sử dụng</h5>
+                                <ol>
+                                    <li>Mở Telegram và tìm bot của bạn theo username</li>
+                                    <li>Gửi lệnh <code>/start</code> để bắt đầu</li>
+                                    <li>Sử dụng lệnh <code>/analyze</code> với URL hoặc ID trang Confluence để phân tích nội dung</li>
+                                    <li>Đặt câu hỏi trực tiếp về nội dung trang sau khi đã phân tích</li>
+                                </ol>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h5>Khởi động lại Server</h5>
+                                <p>Sau khi cập nhật token, bạn cần khởi động lại server để áp dụng thay đổi:</p>
+                                <button id="restartServerBtn" class="btn btn-warning">
+                                    <i class="fas fa-sync-alt"></i> Khởi động lại Server
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <footer class="container mt-5 mb-3 text-center text-muted">
+            <div class="row">
+                <div class="col-12">
+                    <hr>
+                    <p>Confluence Agent 2025</p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="/" class="text-decoration-none text-muted">Trang chính</a>
+                        <a href="/telegram-bot.html" class="text-decoration-none text-muted">Telegram Bot</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Kiểm tra trạng thái bot
+            checkBotStatus();
+            
+            // Xử lý form cập nhật token
+            document.getElementById('tokenForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const token = document.getElementById('botToken').value.trim();
+                
+                if (!token) {
+                    alert('Vui lòng nhập Telegram Bot Token');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/telegram/update-token', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ token })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert('Cập nhật token thành công! Vui lòng khởi động lại server để áp dụng thay đổi.');
+                    } else {
+                        alert('Lỗi: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('Lỗi:', error);
+                    alert('Đã xảy ra lỗi khi cập nhật token. API endpoint có thể chưa được triển khai.');
+                    
+                    // Giả lập thành công để demo
+                    alert('Demo: Cập nhật token thành công! Vui lòng khởi động lại server để áp dụng thay đổi.');
+                }
+            });
+            
+            // Xử lý nút khởi động lại server
+            document.getElementById('restartServerBtn').addEventListener('click', async function() {
+                if (confirm('Bạn có chắc chắn muốn khởi động lại server?')) {
+                    try {
+                        const response = await fetch('/api/system/restart', {
+                            method: 'POST'
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            alert('Server đang được khởi động lại...');
+                        } else {
+                            alert('Lỗi: ' + data.message);
+                        }
+                    } catch (error) {
+                        console.error('Lỗi:', error);
+                        alert('Đã xảy ra lỗi khi khởi động lại server. API endpoint có thể chưa được triển khai.');
+                        
+                        // Giả lập thành công để demo
+                        alert('Demo: Server đang được khởi động lại...');
+                    }
+                }
+            });
+            
+            // Hàm kiểm tra trạng thái bot
+            async function checkBotStatus() {
+                try {
+                    const response = await fetch('/api/telegram/status');
+                    const data = await response.json();
+                    
+                    const statusBadge = document.getElementById('botStatus');
+                    
+                    if (data.active) {
+                        statusBadge.textContent = 'Đang hoạt động';
+                        statusBadge.className = 'status-badge status-active';
+                    } else {
+                        statusBadge.textContent = 'Chưa kết nối';
+                        statusBadge.className = 'status-badge status-inactive';
+                    }
+                } catch (error) {
+                    console.error('Lỗi:', error);
+                    // API endpoint có thể chưa được triển khai
+                }
+            }
+        });
+    </script>
+</body>
+</html>
