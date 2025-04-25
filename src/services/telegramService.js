@@ -126,9 +126,12 @@ function initBot() {
       lastPrompt: newPrompt
     };
     
+    // Escape các ký tự đặc biệt cho MarkdownV2
+    const escapedPrompt = newPrompt.replace(/[_*\[\]()~`>#+\-=|{}.!]/g, '\\$&');
+    
     bot.sendMessage(
       chatId,
-      `✅ *Đã cập nhật prompt thành công*\n\nPrompt mới: "${newPrompt}"\n\n` +
+      `✅ *Đã cập nhật prompt thành công*\n\nPrompt mới: "${escapedPrompt}"\n\n` +
       `💡 *Cách sử dụng*: Gửi lệnh /analyze_batch, sau đó gửi danh sách URL (mỗi URL một dòng) để phân tích với prompt này.`,
       { parse_mode: 'Markdown' }
     );
@@ -196,7 +199,7 @@ function initBot() {
           await bot.sendMessage(
             chatId,
             `🤖 *Phân tích dựa trên prompt*\n\n${results.combinedAnalysis}\n\n` +
-            `🔗 [Xem trang gốc](${results.results[0].url})`,
+            `🔗 Xem trang gốc: ${results.results[0].url}`,
             { parse_mode: 'Markdown' }
           );
           
@@ -226,8 +229,8 @@ function initBot() {
             `📝 *${result.pageTitle}*\n` +
             `ID: ${result.pageId}\n\n` +
             `${result.summary}\n\n` +
-            `🔗 [Xem trang gốc](${result.url})\n\n` +
-            '_💬 Bạn có thể đặt câu hỏi thêm về nội dung trang này._',
+            `🔗 Xem trang gốc: ${result.url}\n\n` +
+            '💬 Bạn có thể đặt câu hỏi thêm về nội dung trang này.',
             { parse_mode: 'Markdown' }
           );
         } else if (results.errors.length > 0) {
@@ -257,6 +260,12 @@ function initBot() {
   });
 
   // Xử lý tin nhắn thông thường
+  // Hàm escape các ký tự đặc biệt cho MarkdownV2
+  const escapeMarkdown = (text) => {
+    if (!text) return '';
+    return text.replace(/[_*\[\]()~`>#+\-=|{}.!]/g, '\\$&');
+  };
+  
   bot.on('message', (msg) => {
     // Bỏ qua các lệnh
     if (msg.text && msg.text.startsWith('/')) return;
@@ -410,10 +419,14 @@ function initBot() {
         
         // Gửi kết quả phân tích tổng hợp nếu có
         if (results.combinedAnalysis) {
+          // Escape nội dung cho Markdown
+          const escapedAnalysis = escapeMarkdown(results.combinedAnalysis);
+          const escapedPrompt = escapeMarkdown(currentPrompt);
+          
           await bot.sendMessage(
             chatId,
-            `🤖 *Phân tích tổng hợp dựa trên prompt*\n\n${results.combinedAnalysis}\n\n` +
-            `✨ *Prompt đã sử dụng:* "${currentPrompt}"`,
+            `🤖 *Phân tích tổng hợp dựa trên prompt*\n\n${escapedAnalysis}\n\n` +
+            `✨ *Prompt đã sử dụng:* "${escapedPrompt}"`,
             { parse_mode: 'Markdown' }
           );
           
@@ -453,8 +466,8 @@ function initBot() {
               `📝 *${result.pageTitle}*\n` +
               `ID: ${result.pageId}\n\n` +
               `${result.summary}\n\n` +
-              `🔗 [Xem trang gốc](${result.url})`,
-              { parse_mode: 'Markdown' }
+              `🔗 Xem trang gốc: ${result.url}`,
+              { parse_mode: 'MarkdownV2' }
             );
             
             // Đợi một chút giữa các tin nhắn để tránh giới hạn tốc độ của Telegram
