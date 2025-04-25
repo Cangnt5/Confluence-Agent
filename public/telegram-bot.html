@@ -164,6 +164,13 @@
                             </div>
                             
                             <div class="mb-4">
+                                <h5>Tính năng chính của Telegram Bot</h5>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i> Bot Telegram giúp bạn phân tích nội dung Confluence mọi lúc, mọi nơi. Bạn có thể phân tích nhiều trang cùng lúc và nhận kết quả tổng hợp dựa trên prompt tùy chỉnh.
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
                                 <h5>Các lệnh có sẵn</h5>
                                 <div class="command-card">
                                     <div class="command-name">/start</div>
@@ -175,27 +182,51 @@
                                 </div>
                                 <div class="command-card">
                                     <div class="command-name">/analyze_batch</div>
-                                    <p class="mb-0">Phân tích một hoặc nhiều trang Confluence. Gửi lệnh này rồi gửi danh sách URL (mỗi URL một dòng)</p>
+                                    <p class="mb-0"><strong>Lệnh chính để phân tích trang Confluence.</strong> Gửi lệnh này rồi gửi danh sách URL (mỗi URL một dòng). Có thể gửi 1 hoặc nhiều URL.</p>
                                 </div>
                                 <div class="command-card">
                                     <div class="command-name">/set_prompt &lt;prompt&gt;</div>
-                                    <p class="mb-0">Đặt prompt tùy chỉnh cho AI khi phân tích trang</p>
+                                    <p class="mb-0">Đặt prompt tùy chỉnh cho AI khi phân tích trang. Ví dụ: <code>/set_prompt Tổng hợp các vấn đề chính và đề xuất giải pháp</code></p>
                                 </div>
                                 <div class="command-card">
                                     <div class="command-name">/prompt &lt;prompt&gt;</div>
-                                    <p class="mb-0">Đặt prompt tùy chỉnh cho AI (tương tự /set_prompt)</p>
+                                    <p class="mb-0">Tương tự như <code>/set_prompt</code>, dùng để đặt prompt tùy chỉnh cho AI</p>
                                 </div>
                             </div>
                             
                             <div class="mb-4">
-                                <h5>Cách sử dụng</h5>
-                                <ol>
-                                    <li>Mở Telegram và tìm bot của bạn theo username</li>
-                                    <li>Gửi lệnh <code>/start</code> để bắt đầu</li>
-                                    <li>Đặt prompt tùy chỉnh bằng lệnh <code>/set_prompt Tổng hợp các vấn đề chính</code></li>
-                                    <li>Sử dụng lệnh <code>/analyze_batch</code> rồi gửi danh sách URL Confluence (mỗi URL một dòng)</li>
-                                    <li>Bot sẽ trả về kết quả phân tích tổng hợp dựa trên prompt của bạn</li>
-                                </ol>
+                                <h5>Hướng dẫn sử dụng chi tiết</h5>
+                                <div class="card mb-3">
+                                    <div class="card-header bg-light">
+                                        <strong>Phân tích một trang Confluence</strong>
+                                    </div>
+                                    <div class="card-body">
+                                        <ol>
+                                            <li>Gửi lệnh: <code>/analyze_batch</code></li>
+                                            <li>Gửi URL của trang Confluence, ví dụ: <code>https://your-domain.atlassian.net/wiki/spaces/SPACE/pages/123456</code></li>
+                                            <li>Bot sẽ phân tích và trả về tóm tắt, từ khóa và các thông tin khác</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                                
+                                <div class="card mb-3">
+                                    <div class="card-header bg-light">
+                                        <strong>Phân tích nhiều trang với prompt tùy chỉnh</strong>
+                                    </div>
+                                    <div class="card-body">
+                                        <ol>
+                                            <li>Đặt prompt tùy chỉnh: <code>/set_prompt Tổng hợp các vấn đề chính và đề xuất giải pháp</code></li>
+                                            <li>Gửi lệnh: <code>/analyze_batch</code></li>
+                                            <li>Gửi danh sách URL (mỗi URL một dòng):</li>
+                                            <li class="text-muted">https://your-domain.atlassian.net/wiki/spaces/SPACE/pages/123456<br>https://your-domain.atlassian.net/wiki/spaces/SPACE/pages/789012</li>
+                                            <li>Bot sẽ phân tích tất cả các trang và trả về kết quả tổng hợp dựa trên prompt của bạn</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-lightbulb"></i> <strong>Mẹo:</strong> Để có kết quả tốt nhất, hãy viết prompt rõ ràng và cụ thể. Ví dụ: "Phân tích các tính năng được mô tả trong các trang, so sánh ưu và nhược điểm, và đề xuất cách cải thiện".
+                                </div>
                             </div>
                             
 
