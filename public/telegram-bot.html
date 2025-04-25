@@ -131,7 +131,12 @@
                             </div>
                             
                             <div class="mb-4">
-                                <h5>Hướng dẫn tạo Telegram Bot</h5>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="mb-0">Hướng dẫn tạo Telegram Bot</h5>
+                                    <button id="restartServerBtn" class="btn btn-warning">
+                                        <i class="fas fa-sync-alt"></i> Khởi động lại Server
+                                    </button>
+                                </div>
                                 <div class="setup-step">
                                     <span class="step-number">1</span>
                                     <span>Mở ứng dụng Telegram và tìm kiếm <strong>@BotFather</strong></span>
@@ -169,12 +174,16 @@
                                     <p class="mb-0">Hiển thị trợ giúp và danh sách các lệnh có sẵn</p>
                                 </div>
                                 <div class="command-card">
-                                    <div class="command-name">/analyze &lt;URL hoặc ID trang&gt;</div>
-                                    <p class="mb-0">Phân tích nội dung của một trang Confluence</p>
+                                    <div class="command-name">/analyze_batch</div>
+                                    <p class="mb-0">Phân tích một hoặc nhiều trang Confluence. Gửi lệnh này rồi gửi danh sách URL (mỗi URL một dòng)</p>
+                                </div>
+                                <div class="command-card">
+                                    <div class="command-name">/set_prompt &lt;prompt&gt;</div>
+                                    <p class="mb-0">Đặt prompt tùy chỉnh cho AI khi phân tích trang</p>
                                 </div>
                                 <div class="command-card">
                                     <div class="command-name">/prompt &lt;prompt&gt;</div>
-                                    <p class="mb-0">Đặt prompt tùy chỉnh cho AI khi phân tích trang</p>
+                                    <p class="mb-0">Đặt prompt tùy chỉnh cho AI (tương tự /set_prompt)</p>
                                 </div>
                             </div>
                             
@@ -183,18 +192,13 @@
                                 <ol>
                                     <li>Mở Telegram và tìm bot của bạn theo username</li>
                                     <li>Gửi lệnh <code>/start</code> để bắt đầu</li>
-                                    <li>Sử dụng lệnh <code>/analyze</code> với URL hoặc ID trang Confluence để phân tích nội dung</li>
-                                    <li>Đặt câu hỏi trực tiếp về nội dung trang sau khi đã phân tích</li>
+                                    <li>Đặt prompt tùy chỉnh bằng lệnh <code>/set_prompt Tổng hợp các vấn đề chính</code></li>
+                                    <li>Sử dụng lệnh <code>/analyze_batch</code> rồi gửi danh sách URL Confluence (mỗi URL một dòng)</li>
+                                    <li>Bot sẽ trả về kết quả phân tích tổng hợp dựa trên prompt của bạn</li>
                                 </ol>
                             </div>
                             
-                            <div class="mb-4">
-                                <h5>Khởi động lại Server</h5>
-                                <p>Sau khi cập nhật token, bạn cần khởi động lại server để áp dụng thay đổi:</p>
-                                <button id="restartServerBtn" class="btn btn-warning">
-                                    <i class="fas fa-sync-alt"></i> Khởi động lại Server
-                                </button>
-                            </div>
+
                         </div>
                     </div>
                 </div>
