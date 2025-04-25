@@ -14,10 +14,11 @@ class BatchAnalysisService {
    * @param {boolean} options.useAi - Sử dụng AI để phân tích
    * @param {string} options.customPrompt - Prompt tùy chỉnh cho AI
    * @param {number} options.maxLength - Độ dài tối đa cho tóm tắt (nếu không sử dụng AI)
+   * @param {boolean} options.includeImages - Có phân tích hình ảnh hay không
    * @returns {Promise<Array>} - Kết quả phân tích
    */
   async analyzeBatch(urls, options = {}) {
-    const { useAi = false, customPrompt = '', maxLength = 500 } = options;
+    const { useAi = false, customPrompt = '', maxLength = 500, includeImages = true } = options;
     
     // Chuẩn hóa danh sách URLs (loại bỏ khoảng trắng, trùng lặp)
     const normalizedUrls = this.normalizeUrlList(urls);
@@ -64,7 +65,7 @@ class BatchAnalysisService {
         } else {
           // Nếu sử dụng AI nhưng không có prompt tùy chỉnh, tạo tóm tắt AI cho từng trang
           if (!customPrompt || customPrompt.trim() === '') {
-            summary = await aiService.generateAiSummary(page.content, 'Tóm tắt nội dung trang này một cách ngắn gọn.');
+            summary = await aiService.generateAiSummary(page.content, 'Tóm tắt nội dung trang này một cách ngắn gọn.', includeImages);
           } else {
             // Nếu có prompt tùy chỉnh, để xử lý sau
             summary = 'Sẽ được phân tích trong kết quả tổng hợp';
@@ -92,7 +93,7 @@ class BatchAnalysisService {
     let combinedAnalysis = null;
     if (useAi && customPrompt && customPrompt.trim() !== '' && pagesData.length > 0) {
       try {
-        combinedAnalysis = await aiService.processMultiplePages(pagesData, customPrompt);
+        combinedAnalysis = await aiService.processMultiplePages(pagesData, customPrompt, includeImages);
       } catch (error) {
         console.error('Error in combined analysis:', error);
         combinedAnalysis = `Lỗi khi phân tích kết hợp: ${error.message}`;

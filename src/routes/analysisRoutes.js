@@ -72,7 +72,7 @@ router.post('/topics', async (req, res) => {
  */
 router.post('/summary', async (req, res) => {
   try {
-    const { pageId, maxLength = 500, useAi = false, customPrompt = '' } = req.body;
+    const { pageId, maxLength = 500, useAi = false, customPrompt = '', includeImages = true } = req.body;
     
     if (!pageId) {
       return res.status(400).json({ error: 'ID trang là bắt buộc' });
@@ -84,7 +84,7 @@ router.post('/summary', async (req, res) => {
     // Tạo tóm tắt
     let summary;
     if (useAi) {
-      summary = await aiService.generateAiSummary(page.content, customPrompt);
+      summary = await aiService.generateAiSummary(page.content, customPrompt, includeImages);
     } else {
       summary = contentAnalyzer.generateSummary(page.content, parseInt(maxLength));
     }
@@ -143,20 +143,21 @@ router.get('/test', (req, res) => {
 
 router.post('/batch', async (req, res) => {
   try {
-    const { urls, useAi = false, customPrompt = '', maxLength = 500 } = req.body;
+    const { urls, useAi = false, customPrompt = '', maxLength = 500, includeImages = true } = req.body;
     
     if (!urls || (Array.isArray(urls) && urls.length === 0) || (typeof urls === 'string' && urls.trim() === '')) {
       return res.status(400).json({ error: 'Danh sách URL là bắt buộc' });
     }
     
     // Log để debug
-    console.log('Đã nhận request phân tích hàng loạt:', { urls, useAi, customPrompt });
+    console.log('Đã nhận request phân tích hàng loạt:', { urls, useAi, customPrompt, includeImages });
     
     // Phân tích hàng loạt
     const results = await batchAnalysisService.analyzeBatch(urls, {
       useAi,
       customPrompt,
-      maxLength
+      maxLength,
+      includeImages
     });
     
     res.json(results);

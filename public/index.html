@@ -215,6 +215,12 @@
                                 <label class="form-check-label" for="useAi">Sử dụng AI (yêu cầu OpenAI API key)</label>
                             </div>
                             
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="includeImages" checked>
+                                <label class="form-check-label" for="includeImages">Phân tích hình ảnh (sử dụng Vision API)</label>
+                                <div class="form-text">Tích hợp phân tích hình ảnh trong tài liệu Confluence vào kết quả tổng hợp</div>
+                            </div>
+                            
                             <div id="aiPromptContainer" class="mb-3">
                                 <label for="customPrompt" class="form-label">Prompt AI</label>
                                 <textarea class="form-control" id="customPrompt" rows="3" placeholder="Nhập yêu cầu của bạn cho AI (ví dụ: Phân tích UX của trang này và đề xuất cải tiến)"></textarea>
@@ -317,6 +323,10 @@
             document.getElementById('useAi').addEventListener('change', function() {
                 document.getElementById('aiPromptContainer').style.display = this.checked ? 'block' : 'none';
                 document.getElementById('maxLengthContainer').style.display = this.checked ? 'none' : 'block';
+                document.getElementById('includeImages').disabled = !this.checked;
+                if (!this.checked) {
+                    document.getElementById('includeImages').checked = false;
+                }
             });
             
             // Xử lý form phân tích hàng loạt
@@ -354,7 +364,8 @@
                             urls: urlList,
                             useAi,
                             customPrompt: useAi ? customPrompt : '',
-                            maxLength: parseInt(maxLength)
+                            maxLength: parseInt(maxLength),
+                            includeImages: document.getElementById('includeImages').checked
                         })
                     });
                     
